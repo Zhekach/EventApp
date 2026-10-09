@@ -9,7 +9,7 @@ public class InMemoryEventService : IEventService
     //TODO Refactor Временная заглушка наполнения
     private static Dictionary<Guid, Event> CreateInitialEvents()
     {
-        var model = Event.Create("Event1", DateTime.Now, DateTime.Today, "dff");
+        var model = Event.Create("Event1", DateTime.Today, DateTime.Today.AddDays(1), "dff");
         var result = new Dictionary<Guid, Event>();
         result.Add(model.Id, model);
 

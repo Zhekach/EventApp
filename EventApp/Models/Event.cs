@@ -20,6 +20,7 @@ public record Event
     public static Event Create(string title, DateTime startAt,  DateTime endAt, string description = "")
     {
         ValidateTitle(title);
+        ValidateDateTime(startAt, endAt);
         Event result = new Event(title, startAt, endAt, description);
         
         return result;
@@ -39,6 +40,12 @@ public record Event
     private static void ValidateTitle(string title)
     {
         if(string.IsNullOrWhiteSpace(title))
-            throw  new ArgumentNullException(nameof(title), "Название не может быть пустым");
+            throw new ArgumentNullException(nameof(title), "Название не может быть пустым");
+    }
+
+    private static void ValidateDateTime(DateTime startAt, DateTime endAt)
+    {
+        if(endAt <= startAt)
+            throw new ArgumentException("Дата начала должна быть раньше даты окончания", nameof(endAt));
     }
 }

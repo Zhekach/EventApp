@@ -12,7 +12,7 @@ public class EventsController(IEventService eventService) : ControllerBase
     private readonly IEventService _eventService = eventService;
 
     [HttpGet]
-    public ActionResult<IReadOnlyCollection<Event>> GetAll()
+    public ActionResult<IReadOnlyCollection<EventResponse>> GetAll()
     {
         return Ok(_eventService.GetAll());
     }
@@ -27,9 +27,18 @@ public class EventsController(IEventService eventService) : ControllerBase
     }
 
     [HttpPost]
-    public IActionResult Create([FromBody] Event newEvent)
+    public IActionResult Create([FromBody] EventRequest newEvent)
     {
         if (_eventService.TryAdd(newEvent))
+            return Ok();
+        
+        return BadRequest();
+    }
+
+    [HttpPut("{id}")]
+    public IActionResult Update([FromRoute] Guid id, [FromBody] EventRequest updateEvent)
+    {
+        if(_eventService.TryUpdate(id, updateEvent))
             return Ok();
         
         return BadRequest();

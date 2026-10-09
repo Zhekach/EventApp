@@ -29,6 +29,7 @@ public record Event
     {
         return this with
         {
+            Title = newEvent.Title,
             Description = newEvent.Description,
             StartAt = newEvent.StartAt,
             EndAt = newEvent.EndAt

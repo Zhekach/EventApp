@@ -1,12 +1,13 @@
-﻿using EventApp.Models;
+﻿using System.Diagnostics.Eventing.Reader;
+using EventApp.Models;
 
 namespace EventApp.Services;
 
 public interface IEventService
 {
-    public IReadOnlyCollection<Event> GetAll();
-    public bool TryGetById(Guid id, out Event? result);
-    public bool TryAdd(Event model);
-    public bool TryUpdate(Event model);
+    public IReadOnlyCollection<EventResponse> GetAll();
+    public bool TryGetById(Guid id, out EventResponse? result);
+    public bool TryAdd(EventRequest model);
+    public bool TryUpdate(Guid id, EventRequest model);
     public bool TryDelete(Guid id);
 }

@@ -5,7 +5,7 @@ Run the app with `dotnet run --project EventApp .
 ## HTTP API
 
 The current service is in-memory. ID is new at every app launch.
-
+*Тут у меня закончилось желание, силы и время и попросил Codex сгенерировать документацию*
 *Endpoint documentation prepared by Codex.*
 
 The `{id}` route parameter must be a GUID. POST and PUT requests must send a JSON body

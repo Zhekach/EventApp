@@ -4,8 +4,18 @@ namespace EventApp.Services;
 
 public class InMemoryEventService : IEventService
 {
-    private readonly Dictionary<Guid, Event> _events = new();
+    private readonly Dictionary<Guid, Event> _events = CreateInitialEvents();
 
+    //TODO Refactor Временная заглушка
+    private static Dictionary<Guid, Event> CreateInitialEvents()
+    {
+        var model = Event.Create("Event1", DateTime.Now, DateTime.Today, "dff");
+        var result = new Dictionary<Guid, Event>();
+        result.Add(model.Id, model);
+        
+        return result;
+    }
+    
     public IReadOnlyCollection<Event> GetAll()
     {
         return _events.Values;

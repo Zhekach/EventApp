@@ -1,6 +1,18 @@
 @EventApp_HostAddress = http://localhost:5230
 
-GET {{EventApp_HostAddress}}/weatherforecast/
+GET {{EventApp_HostAddress}}/events
+Accept: application/json
+
+###
+
+# A malformed GUID returns 400 Bad Request.
+GET {{EventApp_HostAddress}}/events/not-a-guid
+Accept: application/json
+
+###
+
+# An unknown GUID returns 404 Not Found.
+GET {{EventApp_HostAddress}}/events/00000000-0000-0000-0000-000000000000
 Accept: application/json
 
 ###

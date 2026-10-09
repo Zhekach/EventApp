@@ -30,7 +30,7 @@ public class EventsController(IEventService eventService) : ControllerBase
     public IActionResult Create([FromBody] EventRequest newEvent)
     {
         if (_eventService.TryAdd(newEvent))
-            return Ok();
+            return Created();
         
         return BadRequest();
     }
@@ -41,6 +41,15 @@ public class EventsController(IEventService eventService) : ControllerBase
         if(_eventService.TryUpdate(id, updateEvent))
             return Ok();
         
-        return BadRequest();
+        return NotFound();
+    }
+
+    [HttpDelete("{id}")]
+    public IActionResult Delete([FromRoute] Guid id)
+    {
+        if(_eventService.TryDelete(id))
+            return Ok();
+        
+        return NotFound();
     }
 }

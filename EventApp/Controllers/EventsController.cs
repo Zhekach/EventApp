@@ -13,11 +13,24 @@ public class EventsController(IEventService eventService) : ControllerBase
     /// <summary>
     /// Возвращает все доступные события
     /// </summary>
+    /// <param name="title"> - часть названия события; поиск без учёта регистра.</param>
+    /// <param name="from"> - минимальная дата и время начала события, включительно.</param>
+    /// <param name="to"> - максимальная дата и время окончания события, включительно</param>
     /// <response code="200">Список событий. Если событий нет, возвращается пустой массив</response>
     [ProducesResponseType(typeof(IReadOnlyCollection<EventResponse>), StatusCodes.Status200OK)]
     [HttpGet]
-    public ActionResult<IReadOnlyCollection<EventResponse>> GetAll()
+    public ActionResult<IReadOnlyCollection<EventResponse>> GetAll
+    (
+        [FromQuery] string? title,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to
+    )
     {
+        if (title is not null || from is not null || to is not null)
+        {
+            return Ok(_eventService.GetFiltered(title, from, to));
+        }
+
         return Ok(_eventService.GetAll());
     }
 
@@ -30,8 +43,8 @@ public class EventsController(IEventService eventService) : ControllerBase
     /// <response code="404">Событие с таким id не найдено</response>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(EventResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ValidationProblemDetails),StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails),StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public ActionResult<EventResponse> GetById([FromRoute] Guid id)
     {
         if (_eventService.TryGetById(id, out var result) == false)
@@ -53,7 +66,7 @@ public class EventsController(IEventService eventService) : ControllerBase
     {
         if (_eventService.TryAdd(newEvent))
             return Created();
-        
+
         return BadRequest();
     }
 
@@ -66,16 +79,17 @@ public class EventsController(IEventService eventService) : ControllerBase
     /// <response code="400">Некорректные данные</response>
     /// <response code="404">События с таким id не найдено</response>
     [HttpPut("{id}")]
-    [ProducesResponseType( StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public IActionResult Update([FromRoute] Guid id, [FromBody] EventRequest updateEvent)
     {
-        if(_eventService.TryUpdate(id, updateEvent))
+        if (_eventService.TryUpdate(id, updateEvent))
             return Ok();
-        
+
         return NotFound();
     }
+
     /// <summary>
     /// Удаляет событие с переданным id по переданным данным, если такое событие есть в базе
     /// </summary>
@@ -84,14 +98,14 @@ public class EventsController(IEventService eventService) : ControllerBase
     /// <response code="400">Некорректные данные</response>
     /// <response code="404">События с таким id не найдено</response>
     [HttpDelete("{id}")]
-    [ProducesResponseType( StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public IActionResult Delete([FromRoute] Guid id)
     {
-        if(_eventService.TryDelete(id))
+        if (_eventService.TryDelete(id))
             return Ok();
-        
+
         return NotFound();
     }
 }

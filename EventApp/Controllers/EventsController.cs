@@ -18,6 +18,7 @@ public class EventsController(IEventService eventService) : ControllerBase
     [HttpGet]
     public ActionResult<IReadOnlyCollection<EventResponse>> GetAll()
     {
+        //throw new NotImplementedException("sdsfvdfgfd");
         return Ok(_eventService.GetAll());
     }
 

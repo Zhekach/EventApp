@@ -11,8 +11,10 @@ public record EventRequest : IValidatableObject
     
     [Required (ErrorMessage =  "Время начала обязательно для заполнения")]
     public DateTime StartAt { get; set; }
+    
     [Required (ErrorMessage =  "Время окончания обязательно для заполнения")]
     public DateTime EndAt { get; set; }
+    
     public string Description { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

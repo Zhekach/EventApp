@@ -4,17 +4,17 @@ namespace EventApp.Services;
 
 public class InMemoryEventService : IEventService
 {
-    private readonly Dictionary<Guid, Event> _events = CreateInitialEvents();
+    private readonly Dictionary<Guid, Event> _events = new ();
 
-    //TODO Refactor Временная заглушка наполнения
-    private static Dictionary<Guid, Event> CreateInitialEvents()
-    {
-        var model = Event.Create("Event1", DateTime.Today, DateTime.Today.AddDays(1), "dff");
-        var result = new Dictionary<Guid, Event>();
-        result.Add(model.Id, model);
-
-        return result;
-    }
+    // //TODO Refactor Временная заглушка наполнения
+    // private static Dictionary<Guid, Event> CreateInitialEvents()
+    // {
+    //     var model = Event.Create("Event1", DateTime.Today, DateTime.Today.AddDays(1), "dff");
+    //     var result = new Dictionary<Guid, Event>();
+    //     result.Add(model.Id, model);
+    //
+    //     return result;
+    // }
 
     public PaginatedResult GetAll(EventsQuery query)
     {

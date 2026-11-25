@@ -6,6 +6,7 @@ namespace EventApp.Services;
 public interface IEventService
 {
     public IReadOnlyCollection<EventResponse> GetAll();
+    public IReadOnlyCollection<EventResponse> GetFiltered(string? title,  DateTime? from, DateTime? to);
     public bool TryGetById(Guid id, out EventResponse? result);
     public bool TryAdd(EventRequest model);
     public bool TryUpdate(Guid id, EventRequest model);

@@ -28,6 +28,34 @@ public class InMemoryEventService : IEventService
         return result;
     }
 
+    public IReadOnlyCollection<EventResponse> GetFiltered(string? title,  DateTime? from, DateTime? to)
+    {
+        IEnumerable<Event> filtered = _events.Values;
+        
+        if (string.IsNullOrWhiteSpace(title) == false )
+        {
+            filtered = filtered.Where(e => e.Title.Contains(title, StringComparison.InvariantCultureIgnoreCase));
+        }
+
+        if (from is not null)
+        {
+            filtered = filtered.Where(e => e.StartAt >= from);
+        }
+
+        if (to is not null)
+        {
+            filtered = filtered.Where(e => e.EndAt <= to);
+        }
+        
+        var result = new List<EventResponse>();
+        foreach (var model in filtered)
+        {
+            result.Add(MapModelToResponse(model));
+        }
+
+        return result;
+    }
+
     public bool TryGetById(Guid id, out EventResponse? result)
     {
         if (_events.TryGetValue(id, out Event? model) == false)

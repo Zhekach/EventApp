@@ -1,4 +1,5 @@
-﻿using EventApp.Models;
+﻿using System.ComponentModel.DataAnnotations;
+using EventApp.Models;
 using EventApp.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,30 +9,29 @@ namespace EventApp.Controllers;
 [Route("[controller]")]
 public class EventsController(IEventService eventService) : ControllerBase
 {
-    private readonly IEventService _eventService = eventService;
-
     /// <summary>
-    /// Возвращает все доступные события
+    /// Возвращает отфильтрованные и пагинированные события
     /// </summary>
     /// <param name="title"> - часть названия события; поиск без учёта регистра.</param>
     /// <param name="from"> - минимальная дата и время начала события, включительно.</param>
-    /// <param name="to"> - максимальная дата и время окончания события, включительно</param>
-    /// <response code="200">Список событий. Если событий нет, возвращается пустой массив</response>
-    [ProducesResponseType(typeof(IReadOnlyCollection<EventResponse>), StatusCodes.Status200OK)]
+    /// <param name="to"> - максимальная дата и время окончания события, включительно.</param>
+    /// <param name="page"> - номер страницы для пагинации результатов (по умолчанию = 1).</param>
+    /// <param name="pageSize"> - количество элементов на странице (по умолчанию = 10).</param>
+    /// <response code="200">Результат фильтрации и пагинации всех событий.</response>
+    [ProducesResponseType(typeof(PaginatedResult), StatusCodes.Status200OK)]
     [HttpGet]
-    public ActionResult<IReadOnlyCollection<EventResponse>> GetAll
+    public ActionResult<PaginatedResult> GetAll
     (
         [FromQuery] string? title,
         [FromQuery] DateTime? from,
-        [FromQuery] DateTime? to
+        [FromQuery] DateTime? to,
+        [FromQuery, Range(1, int.MaxValue)] int page = 1,
+        [FromQuery, Range(1, int.MaxValue)] int pageSize = 10
     )
     {
-        if (title is not null || from is not null || to is not null)
-        {
-            return Ok(_eventService.GetFiltered(title, from, to));
-        }
-
-        return Ok(_eventService.GetAll());
+        var eventsQuery = new EventsQuery(title, from, to, page, pageSize);
+        
+        return Ok(eventService.GetAll(eventsQuery));
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ public class EventsController(IEventService eventService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public ActionResult<EventResponse> GetById([FromRoute] Guid id)
     {
-        if (_eventService.TryGetById(id, out var result) == false)
+        if (eventService.TryGetById(id, out var result) == false)
             return NotFound();
 
         return Ok(result);
@@ -64,7 +64,7 @@ public class EventsController(IEventService eventService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public IActionResult Create([FromBody] EventRequest newEvent)
     {
-        if (_eventService.TryAdd(newEvent))
+        if (eventService.TryAdd(newEvent))
             return Created();
 
         return BadRequest();
@@ -84,7 +84,7 @@ public class EventsController(IEventService eventService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public IActionResult Update([FromRoute] Guid id, [FromBody] EventRequest updateEvent)
     {
-        if (_eventService.TryUpdate(id, updateEvent))
+        if (eventService.TryUpdate(id, updateEvent))
             return Ok();
 
         return NotFound();
@@ -103,7 +103,7 @@ public class EventsController(IEventService eventService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public IActionResult Delete([FromRoute] Guid id)
     {
-        if (_eventService.TryDelete(id))
+        if (eventService.TryDelete(id))
             return Ok();
 
         return NotFound();

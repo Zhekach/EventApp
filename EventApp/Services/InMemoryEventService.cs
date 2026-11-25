@@ -16,44 +16,11 @@ public class InMemoryEventService : IEventService
         return result;
     }
 
-    public IReadOnlyCollection<EventResponse> GetAll()
+    public PaginatedResult GetAll(EventsQuery query)
     {
-        var result = new List<EventResponse>();
+        var filteredEvents = GetFilteredEvents(query);
 
-        foreach (var model in _events.Values)
-        {
-            result.Add(MapModelToResponse(model));
-        }
-
-        return result;
-    }
-
-    public IReadOnlyCollection<EventResponse> GetFiltered(string? title,  DateTime? from, DateTime? to)
-    {
-        IEnumerable<Event> filtered = _events.Values;
-        
-        if (string.IsNullOrWhiteSpace(title) == false )
-        {
-            filtered = filtered.Where(e => e.Title.Contains(title, StringComparison.InvariantCultureIgnoreCase));
-        }
-
-        if (from is not null)
-        {
-            filtered = filtered.Where(e => e.StartAt >= from);
-        }
-
-        if (to is not null)
-        {
-            filtered = filtered.Where(e => e.EndAt <= to);
-        }
-        
-        var result = new List<EventResponse>();
-        foreach (var model in filtered)
-        {
-            result.Add(MapModelToResponse(model));
-        }
-
-        return result;
+        return GetPaginatedResult(filteredEvents, query);
     }
 
     public bool TryGetById(Guid id, out EventResponse? result)
@@ -63,7 +30,7 @@ public class InMemoryEventService : IEventService
             result = null;
             return false;
         }
-        
+
         result = MapModelToResponse(model);
         return true;
     }
@@ -104,6 +71,55 @@ public class InMemoryEventService : IEventService
             return true;
 
         return false;
+    }
+
+    private IEnumerable<Event> GetFilteredEvents(EventsQuery query)
+    {
+        IEnumerable<Event> filtered = _events.Values;
+
+        if (string.IsNullOrWhiteSpace(query.Title) == false)
+        {
+            filtered = filtered.Where(e => e.Title.Contains(query.Title, StringComparison.InvariantCultureIgnoreCase));
+        }
+
+        if (query.From is not null)
+        {
+            filtered = filtered.Where(e => e.StartAt >= query.From);
+        }
+
+        if (query.To is not null)
+        {
+            filtered = filtered.Where(e => e.EndAt <= query.To);
+        }
+
+        return filtered;
+    }
+
+    private PaginatedResult GetPaginatedResult(IEnumerable<Event> events, EventsQuery query)
+    {
+        var totalItemsCount = events.Count();
+        long itemsSkipCount = ((long)query.Page - 1) * query.PageSize;
+        
+        if (itemsSkipCount >= totalItemsCount)
+        {
+            var emptyResult = new PaginatedResult(totalItemsCount, new List<EventResponse>(), query.Page, 0);
+        
+            return emptyResult;
+        }
+        
+        var items = events
+            .Skip((int)itemsSkipCount)
+            .Take(query.PageSize);
+        
+        var resultItems = new List<EventResponse>();
+        foreach (var item in items)
+        {
+            resultItems.Add(MapModelToResponse(item));
+        }
+        
+        var result = new PaginatedResult(totalItemsCount, resultItems, query.Page, resultItems.Count);
+        
+        return result;
     }
 
     private Event MapRequestToModel(EventRequest modelRequest)

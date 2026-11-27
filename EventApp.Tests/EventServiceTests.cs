@@ -8,11 +8,13 @@ public class EventServiceTests
     private readonly IEventService _eventService;
     private readonly Random _random;
     private const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private readonly EventsQuery _eventsQueryDefault;
 
     public EventServiceTests()
     {
         _eventService = new InMemoryEventService();
         _random = new Random();
+        _eventsQueryDefault = new EventsQuery(null, null, null, 1, 10);
     }
 
     [Fact]
@@ -30,14 +32,13 @@ public class EventServiceTests
             StartAt = newEventStartDate,
             EndAt = newEventEndDate,
         };
-        var eventsQuery = new EventsQuery(null, null, null, 1, 2);
 
         //Act
         var result = _eventService.TryAdd(newEvent);
 
         //Assert
         Assert.True(result);
-        var addedEvent = Assert.Single(_eventService.GetAll(eventsQuery).CurrentEvents);
+        var addedEvent = Assert.Single(_eventService.GetAll(_eventsQueryDefault).CurrentEvents);
         Assert.Equal(newEventTitle, addedEvent.Title);
         Assert.Equal(newEventDescription, addedEvent.Description);
         Assert.Equal(newEventStartDate, addedEvent.StartAt);
@@ -84,15 +85,11 @@ public class EventServiceTests
         var newEventTitle2 = "Title2";
         var request1 = GenerateNewEventRequest(newEventTitle1);
         var request2 = GenerateNewEventRequest(newEventTitle2);
-        var startAt = request1.StartAt;
-        var endAt = request1.EndAt;
-
-        var eventsQuery = new EventsQuery(null, null, null, 1, 10);
 
         //Act
         var isAddedOk = _eventService.TryAdd(request1);
         isAddedOk &= _eventService.TryAdd(request2);
-        var paginatedEvents = _eventService.GetAll(eventsQuery);
+        var paginatedEvents = _eventService.GetAll(_eventsQueryDefault);
         var eventsResponse = paginatedEvents.CurrentEvents;
 
         //Assert
@@ -110,6 +107,40 @@ public class EventServiceTests
             Assert.Equal(expected.StartAt, actualResponse.StartAt);
             Assert.Equal(expected.EndAt, actualResponse.EndAt);
         }
+    }
+
+    [Fact]
+    public void TryUpdate_WithExistingId_UpdatesEvent()
+    {
+        //Arrange
+        var baseTitle = "Base title";
+        var baseRequest = GenerateNewEventRequest(baseTitle);
+        var updateEventRequest = baseRequest with
+        {
+            Title = "Update Title",
+            Description = "Updated description",
+            StartAt = baseRequest.StartAt.AddDays(3),
+            EndAt = baseRequest.EndAt.AddDays(3),
+        } ;
+
+        //Act
+        var isAddedOk = _eventService.TryAdd(baseRequest);
+        var baseEventResponse = _eventService.GetAll(_eventsQueryDefault).CurrentEvents.
+            First(e => e.Title == baseTitle);
+        var eventId = baseEventResponse.guid;
+        var isUpdatedOk = _eventService.TryUpdate(eventId, updateEventRequest);
+        var isUpdateReceivedById = _eventService.TryGetById(eventId, out var updatedEventResponse);
+
+        //Assert
+        Assert.True(isAddedOk);
+        Assert.True(isUpdatedOk);
+        Assert.True(isUpdateReceivedById);
+        Assert.NotNull(updatedEventResponse);
+        Assert.Equal(eventId, updatedEventResponse.guid);
+        Assert.Equal(updateEventRequest.Title, updatedEventResponse.Title);
+        Assert.Equal(updateEventRequest.Description, updatedEventResponse.Description);
+        Assert.Equal(updateEventRequest.StartAt, updatedEventResponse.StartAt);
+        Assert.Equal(updateEventRequest.EndAt, updatedEventResponse.EndAt);
     }
 
     private EventRequest GenerateNewEventRequest(string title, string description = "description")

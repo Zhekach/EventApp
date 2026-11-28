@@ -34,10 +34,10 @@ public class EventServiceTests
         };
 
         //Act
-        var result = _eventService.TryAdd(newEvent);
+        var isEventAdded = _eventService.TryAdd(newEvent);
 
         //Assert
-        Assert.True(result);
+        Assert.True(isEventAdded);
         var addedEvent = Assert.Single(_eventService.GetAll(_eventsQueryDefault).CurrentEvents);
         Assert.Equal(newEventTitle, addedEvent.Title);
         Assert.Equal(newEventDescription, addedEvent.Description);
@@ -61,13 +61,13 @@ public class EventServiceTests
         var eventsQuery = new EventsQuery(null, null, null, eventsQueryPage, eventsQueryPageSize);
 
         //Act
-        var result = _eventService.TryAdd(newEvent1);
-        result &= _eventService.TryAdd(newEvent2);
-        result &= _eventService.TryAdd(newEvent3);
+        var isEventsAdded = _eventService.TryAdd(newEvent1);
+        isEventsAdded &= _eventService.TryAdd(newEvent2);
+        isEventsAdded &= _eventService.TryAdd(newEvent3);
         var paginatedEvents = _eventService.GetAll(eventsQuery);
 
         //Assert
-        Assert.True(result);
+        Assert.True(isEventsAdded);
         Assert.Equal(3, paginatedEvents.TotalEventsCount);
         Assert.Equal(3, paginatedEvents.CurrentEvents.Count);
         Assert.Equal(3, paginatedEvents.CurrentPageEventsCount);
@@ -87,22 +87,22 @@ public class EventServiceTests
         var request2 = GenerateNewEventRequest(newEventTitle2);
 
         //Act
-        var isAddedOk = _eventService.TryAdd(request1);
-        isAddedOk &= _eventService.TryAdd(request2);
+        var iseventsAdded = _eventService.TryAdd(request1);
+        iseventsAdded &= _eventService.TryAdd(request2);
         var paginatedEvents = _eventService.GetAll(_eventsQueryDefault);
         var eventsResponse = paginatedEvents.CurrentEvents;
 
         //Assert
-        Assert.True(isAddedOk);
+        Assert.True(iseventsAdded);
 
         foreach (var expected in new[] { request1, request2 })
         {
-            var expectedId = Assert.Single(eventsResponse, e => e.Title == expected.Title).guid;
+            var expectedId = Assert.Single(eventsResponse, e => e.Title == expected.Title).Guid;
             var isEventFound = _eventService.TryGetById(expectedId, out var actualResponse);
 
             Assert.True(isEventFound);
             Assert.NotNull(actualResponse);
-            Assert.Equal(expectedId, actualResponse.guid);
+            Assert.Equal(expectedId, actualResponse.Guid);
             Assert.Equal(expected.Title, actualResponse.Title);
             Assert.Equal(expected.StartAt, actualResponse.StartAt);
             Assert.Equal(expected.EndAt, actualResponse.EndAt);
@@ -124,29 +124,65 @@ public class EventServiceTests
         } ;
 
         //Act
-        var isAddedOk = _eventService.TryAdd(baseRequest);
+        var isEventAdded = _eventService.TryAdd(baseRequest);
         var baseEventResponse = _eventService.GetAll(_eventsQueryDefault).CurrentEvents.
             First(e => e.Title == baseTitle);
-        var eventId = baseEventResponse.guid;
-        var isUpdatedOk = _eventService.TryUpdate(eventId, updateEventRequest);
+        var eventId = baseEventResponse.Guid;
+        var isUpdated = _eventService.TryUpdate(eventId, updateEventRequest);
         var isUpdateReceivedById = _eventService.TryGetById(eventId, out var updatedEventResponse);
 
         //Assert
-        Assert.True(isAddedOk);
-        Assert.True(isUpdatedOk);
+        Assert.True(isEventAdded);
+        Assert.True(isUpdated);
         Assert.True(isUpdateReceivedById);
         Assert.NotNull(updatedEventResponse);
-        Assert.Equal(eventId, updatedEventResponse.guid);
+        Assert.Equal(eventId, updatedEventResponse.Guid);
         Assert.Equal(updateEventRequest.Title, updatedEventResponse.Title);
         Assert.Equal(updateEventRequest.Description, updatedEventResponse.Description);
         Assert.Equal(updateEventRequest.StartAt, updatedEventResponse.StartAt);
         Assert.Equal(updateEventRequest.EndAt, updatedEventResponse.EndAt);
+    }
+    
+    [Fact]
+    public void TryDelete_WithExistingId_DeletesEvent()
+    {
+        //Arrange
+        var titleToDelete = "Title to delete";
+        var titleToKeep = "Title to keep";
+        Assert.True(_eventService.TryAdd(GenerateNewEventRequest(titleToDelete)));
+        Assert.True(_eventService.TryAdd(GenerateNewEventRequest(titleToKeep)));
+        var events = _eventService.GetAll(_eventsQueryDefault).CurrentEvents;
+        var eventToDeleteId = Assert.Single(events, e => e.Title == titleToDelete).Guid;
+        var eventToKeepId = Assert.Single(events, e => e.Title == titleToKeep).Guid;
+
+        //Act
+        var isDeleted = _eventService.TryDelete(eventToDeleteId);
+
+        //Assert
+        Assert.True(isDeleted);
+        Assert.False(_eventService.TryGetById(eventToDeleteId, out var deletedEventResponse));
+        Assert.Null(deletedEventResponse);
+        
+        var eventToKeepResponse = Assert.Single(_eventService.GetAll(_eventsQueryDefault).CurrentEvents);
+        Assert.Equal(eventToKeepId, eventToKeepResponse.Guid);
     }
 
     private EventRequest GenerateNewEventRequest(string title, string description = "description")
     {
         var startAt = new DateTime(2000, 1, 1);
         var endAt = new DateTime(2000, 1, 2);
+        return new EventRequest
+        {
+            Title = title,
+            StartAt = startAt,
+            EndAt = endAt,
+            Description = description,
+        };
+    }
+    
+    private EventRequest GenerateNewEventRequest(string title, DateTime startAt, DateTime endAt, 
+        string description = "description")
+    {
         return new EventRequest
         {
             Title = title,
